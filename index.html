@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <title>Symulator blendera</title>
+    <script src="DEV_el.js" defer></script>
+    <script src="DEV_blender.js" defer></script>
+    <script src="index.js" defer></script>
+    <link rel="stylesheet" href="index.css">
+</head>
+<body>
+    <h1 id="welcome" class="initial-hide">Witaj w blenderze...</h1>
+    <img id="blender" class='offscreen' src="assets/blender_static.jpg" alt="Obraz blendera">
+    <div id="buttons">
+        <button id="show-button" type="button" onclick="showBlender()">Show the blender!</button>
+    </div>
+
+    <div id="orders-panel" class="initial-hide">
+        <h1>abc!</h1>
+        <hr>
+    </div>
+    
+    <div id="settings-panel" class="initial-hide">
+        <h1>Tutaj ustawienia</h1>
+        <hr>
+        <h2>Subsekcja 1</h2>
+        <h3>Flavour text</h3>
+    </div>
+</body>
+</html>
