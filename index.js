@@ -1,6 +1,7 @@
 const delay = ms => new Promise(res => setTimeout(res, ms));
 
 const blender_img = document.getElementById('blender')
+let blender = null;
 
 let tracklist = [
     'assets/HOME - Resonance.mp3',
@@ -22,12 +23,26 @@ function getNextSong() {
 function audioEndedHandler() {
     let new_audio = getNextSong();
     new_audio.play()
+    console.log(`Now playing, ${getPathFilename(new_audio.src)}!`);
     new_audio.addEventListener('ended', audioEndedHandler);
 }
 
+function getPathFilename(src) {
+    let spl = src.split('/');
+    let last = spl[spl.length-1];
+    return last.split('.')[0].replaceAll('%20', ' ');
+}
 
 async function showBlender() {
-    //blender_img.style.top = `${(parseFloat(blender_img.style.top == "" ? 0 : blender_img.style.top.replace('px', '')) ) + 250}px`
+    // Do not enter proper Blender UI if blender build failed
+    try {
+        blender = new Blender();
+        blender.on();
+    } catch (err) {
+        console.error(err);
+        return;
+    }
+    
     blender_img.style.transform = 'translate(0, -50%)'
     blender_img.style.top = "50%"
     document.getElementById('show-button').style.display = 'none';
@@ -36,6 +51,7 @@ async function showBlender() {
 
     let audio = getNextSong();
     audio.play();
+    console.log(`Now playing, ${getPathFilename(audio.src)}!`);
     audio.addEventListener('ended', audioEndedHandler);
 
     document.getElementsByTagName('body')[0].style.backgroundColor = "#339670";
@@ -50,17 +66,8 @@ async function showBlender() {
     const welcome = document.getElementById('welcome');
     welcome.style.opacity = '1'
     document.documentElement.style.setProperty('--bg-opacity', '0.1');
-
+    
+    document.getElementById('lid-label').style.opacity = '1'
     document.getElementById('orders-panel').style.opacity = '1'
     document.getElementById('settings-panel').style.opacity = '1'
-
-
 }
-
-function moveBlender() {
-    console.log(blender_img.style.top)
-    console.log(blender_img.style.top)
-}
-
-
-let blender = new Blender();

@@ -5,6 +5,8 @@
 body {
     font-family: Consolas, 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     color: black;
+    overflow-x: hidden;
+    overflow-y: hidden;
 }
 
 .offscreen {
@@ -18,7 +20,7 @@ img {
 }
 
 img#blender {
-    height: 66vh;
+    height: 67vh;
     width: auto;
 }
 
@@ -54,6 +56,13 @@ h1#welcome {
     font-size: xx-large;
 }
 
+div#lid-label {
+    position: absolute;
+    top: 10%;
+    left: 50%;
+    transform: translate(-50%, 0);
+}
+
 div#buttons {
     position: absolute;
     top: 1000px;
@@ -63,8 +72,10 @@ div#orders-panel, div#settings-panel {
     position: absolute;
     top: 25%;
     width: 15%;
-    border: solid bisque 3px;
+    background-color: bisque;
+    border: solid rgb(173, 132, 82) 8px;
     border-radius: 5px;
+    padding: 10px;
 }
 
 div#orders-panel {
@@ -72,5 +83,5 @@ div#orders-panel {
 }
 
 div#settings-panel {
-    left: 84%;
+    left: 83%;
 }

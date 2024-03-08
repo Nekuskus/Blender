@@ -2,7 +2,9 @@
 <html lang="pl">
 <head>
     <meta charset="UTF-8">
-    <title>Symulator blendera</title>
+    <title>DJ Blender</title>
+    <meta name="description" content="Mix do diffowania smoothie z marchewek">
+    <meta name="author" content="***REMOVED***">
     <script src="DEV_el.js" defer></script>
     <script src="DEV_blender.js" defer></script>
     <script src="index.js" defer></script>
@@ -12,7 +14,11 @@
     <h1 id="welcome" class="initial-hide">Witaj w blenderze...</h1>
     <img id="blender" class='offscreen' src="assets/blender_static.jpg" alt="Obraz blendera">
     <div id="buttons">
-        <button id="show-button" type="button" onclick="showBlender()">Show the blender!</button>
+        <button id="show-button" type="button" onclick="showBlender()">Utwórz blender!</button>
+    </div>
+
+    <div id="lid-label" class="initial-hide">
+        <h2><span id="lid-status">[Pokrywka zamknięta.]</span></h2>
     </div>
 
     <div id="orders-panel" class="initial-hide">
