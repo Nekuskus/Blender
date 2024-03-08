@@ -85,3 +85,17 @@ div#orders-panel {
 div#settings-panel {
     left: 83%;
 }
+
+div#control-buttons {
+    position: absolute;
+    display: flex;
+    flex-direction: row;
+
+    top: 85%;
+    left: 50%;
+    transform: translate(-50%, 0);
+}
+
+div#control-buttons button {
+    margin: 3%;
+}

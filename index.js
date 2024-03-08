@@ -70,4 +70,5 @@ async function showBlender() {
     document.getElementById('lid-label').style.opacity = '1'
     document.getElementById('orders-panel').style.opacity = '1'
     document.getElementById('settings-panel').style.opacity = '1'
+    document.getElementById('control-buttons').style.opacity = '1'
 }
