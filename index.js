@@ -34,10 +34,21 @@ function getPathFilename(src) {
 }
 
 async function showBlender() {
+    let form = document.getElementById('init-form');
+    for(let elem of [...form.children]) {
+        if(elem.tagName == "INPUT" && elem.value == "") {
+            elem.focus()
+            return;
+        }
+    }
     // Do not enter proper Blender UI if blender build failed
     try {
+
         blender = new Blender();
         blender.on();
+        blender.closeLid();
+
+
     } catch (err) {
         console.error(err);
         return;
@@ -45,7 +56,7 @@ async function showBlender() {
     
     blender_img.style.transform = 'translate(0, -50%)'
     blender_img.style.top = "50%"
-    document.getElementById('show-button').style.display = 'none';
+    document.getElementById('init-form').style.display = 'none';
 
     await delay(2500);
 

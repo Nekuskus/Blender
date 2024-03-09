@@ -13,9 +13,38 @@
 <body>
     <h1 id="welcome" class="initial-hide">Witaj w blenderze...</h1>
     <img id="blender" class='offscreen' src="assets/blender_static.jpg" alt="Obraz blendera">
-    <div id="buttons">
+
+    <form id="init-form">
+        <!-- input:number[name=voltage]+label[for=voltage]{ [V] Napięcie nominalne}+br -->
+        <input type="number" name="voltage" value="230"><label for="voltage"> [V] Napięcie nominalne</label><br>
+        <input type="number" name="power" value="1200"><label for="power"> [W] Moc</label><br>
+        <input type="number" name="mtbf" value="50"><label for="mtbf" data-tooltip="Średni czas między awariami urządzenia, w minutach"> [min.] MTBF</label><br>
+        <select name="energyClass">
+            <option value="A">A</option>
+            <option value="B" selected>B</option>
+            <option value="C">C</option>
+            <option value="D">D</option>
+            <option value="E">E</option>
+            <option value="F">F</option>
+        </select><label for="energyClass" data-tooltip="Klasa Energetyczna urządzenia, według standardu Unijnego post-2023"> Klasa energetyczna</label><br>
+        <select name="psu">
+            <option value="AC" selected>AC</option>
+            <option value="DC">DC</option>
+        </select><label for="psu" data-tooltip="AC - prąd zmienny, DC - prąd stały (blender wspiera tylko prąd zmienny)"> Typ zasilania</label><br>
+        <input type="text" name="max-load" value="5kg"><label for="max-load" data-tooltip="Maks. waga zawartości blendera"> [t|kg|dag|mg|g] Maksymalny udźwig blendera</label><br>
+        <input type="number" name="temp-val" value="35"> [<select name="temp-type">
+            <option value="C" selected>°C</option>
+            <option value="F">°F</option>
+            <option value="K">K</option>
+        </select><label for="temp-val" data-tooltip="Niektóre blendery nie pracują dobrze przy gorącej cieczy, przekroczenie tego limitu może prowadzić do uszkodzeń urządzenia.">] Maksymalna temperatura cieczy</label><br>
+        <input type="text" name="width" value="15cm"><label for="width" data-tooltip="Ta wartość wpływa na wyliczenie objętości pojemnika blendera"> [km|dm|cm|m|mm] Szerokość</label><br>
+        <input type="text" name="depth" value="35cm"><label for="depth" data-tooltip="Ta wartość wpływa na wyliczenie objętości pojemnika blendera"> [km|dm|cm|m|mm] Głębokość</label><br>
+        <input type="text" name="height" value="38cm"><label for="height" data-tooltip="Ta wartość wpływa na wyliczenie objętości pojemnika blendera"> [km|dm|cm|m|mm] Wysokość</label><br>
+        <input type="text" name="weight" value="3.05kg"><label for="weight"> [t|kg|dag|mg|g] Waga</label><br>
+
+        <br>
         <button id="show-button" type="button" onclick="showBlender()">Utwórz blender!</button>
-    </div>
+    </form>
 
     <div id="lid-label" class="initial-hide">
         <h2><span id="lid-status">[Pokrywka zamknięta.]</span></h2>
@@ -23,7 +52,11 @@
 
     <div id="status-panel" class="initial-hide">
         <h2>Specyfikacja i status blendera</h2>
-        <div id="specs">
+        <div class="specs">
+
+        </div>
+        <hr>
+        <div class="specs">
             <div>Status: <span id="on-off-span"></span></div>
             <div>Pokrywka: <span id="lid-span"></span></div>
         </div>

@@ -1,6 +1,6 @@
 class Blender extends AGDDev {
     #isLidOpen; #maxLoad; #maxLiquidTemp; #foodstuffsList; #liquidsList; #blend_interval; #img;
-    constructor(power = 1200, MTBF = 50, energyClass = 'B', voltage = 230, psu = "AC", maxLoad = "5kg", maxLiquidTemp = new Celcius(35), width = "15cm", height = "38cm", depth = "15cm", weight = "3.05kg") {
+    constructor(power = 1200, voltage = 230, MTBF = 50, energyClass = 'B', psu = "AC", maxLoad = "5kg", maxLiquidTemp = new Celcius(35), width = "15cm", height = "38cm", depth = "15cm", weight = "3.05kg") {
         if(psu == "DC") {
             throw new Error("Blender nie może operować na prądzie stałym.")
         }
@@ -20,12 +20,22 @@ class Blender extends AGDDev {
             weight)
         this.#isLidOpen = false;
         this.#maxLoad = unitParse(maxLoad);
-        this.#maxLiquidTemp = maxLiquidTemp.getValue();
+        this.#maxLiquidTemp = maxLiquidTemp;
         this.#foodstuffsList = [];
         this.#liquidsList = [];
         this.#blend_interval = -1;
         this.#img = document.getElementById('blender');
         console.log(super.report());
+    }
+    
+
+    getMaxVolume() {
+        let props = super.size()
+        return props.width * props.depth * (props.height > 0.10 ? props.height - 0.10 : 0.30) //min height blendera 10cm, jak jest podane mniejsze to defaultujemy do 30cm aby było rozsądnie
+    }
+
+    getMaxVolumeStr() {
+        return `${(this.getMaxVolume()*1_000_000).toFixed(2)}cm³`;
     }
 
     async breakdown() {
@@ -106,7 +116,7 @@ class Blender extends AGDDev {
         
         document.getElementById('on-off').style.backgroundColor = 'red'
 
-        let label = document.getElementById('on-off-span')
+        let label = document.getElementById('lid-span')
         label.innerText = 'off'
         label.style.color = 'red'
     }
@@ -140,9 +150,9 @@ class Blender extends AGDDev {
             throw new Error("Pokrywka musi być otwarta przed wlewaniem składników.")
         }
 
-        if(newLiquid.getTemperature().getValue() > this.#maxLiquidTemp) {
+        if(newLiquid.getTemperature().getValue() > this.#maxLiquidTemp.getValue()) {
             this.breakdown();
-            throw new Error("Ciecz przekroczyła maksymalny limit temperatury blendera.")
+            throw new Error(`Ciecz (${newLiquid.getTemperature().report()}) przekroczyła maksymalny limit temperatury blendera (${this.#maxLiquidTemp.report()}).`)
         }
 
         let total_weight = 0;
@@ -157,14 +167,18 @@ class Blender extends AGDDev {
         });
 
         if(total_weight + newLiquid.getTotalWeight() > this.getMaxLoad()) {
-            throw new Error(`Dodanie [${edibleObject.report()}] przekroczyłoby maksymalny limit udźwigu blendera.`);
+            throw new Error(`Dodanie [${newLiquid.report()}] przekroczyłoby maksymalny limit udźwigu blendera.`);
         }
 
         if(total_volume + newLiquid.getVolume() > this.getMaxVolume()) {
-            throw new Error(`Dodanie [${edibleObject.report()}] przekroczyłoby maksymalny limit objętości blendera i spowodowało przelanie.`);
+            throw new Error(`Dodanie [${newLiquid.report()}] przekroczyłoby maksymalny limit objętości blendera i spowodowało przelanie.`);
         }
 
         this.#liquidsList.push(newLiquid);
+    }
+
+    getContents() {
+        return this.#foodstuffsList.concat(this.#liquidsList)
     }
 }
 
@@ -181,7 +195,7 @@ class EdibleObject {
     }
 
     report() {
-        return this.#name;
+        return this.#name + (this.#typename != '' ? ` (${this.#typename})` : '');
     }
 
     getType() {
@@ -224,7 +238,7 @@ class Liquid {
 
     
     report() {
-        return this.#name;
+        return this.#name + (this.#typename != '' ? ` (${this.#typename})` : '');
     }
 
     getType() {
@@ -253,21 +267,56 @@ class Temperature {
     getValue() {
         return this.#value;
     }
+
+    report() {
+        return `${this.#value}°C`
+    }
 }
 
 class Celcius extends Temperature {
     constructor(value) {
+        if(value < -275.15) {
+            throw new Error("Próbowano skonstruować temperaturę niższą od absolutnego zera")
+        }
         super(value);
+    }
+
+    report() {
+        return `${this.getValue()}°C`
     }
 }
 
 class Fahrenheit extends Temperature {
+    #orig_value
     constructor(value) {
+        this.#orig_value = value
         let converted = (value - 32) / 1.8
+        if(converted < -275.15) {
+            throw new Error("Próbowano skonstruować temperaturę niższą od absolutnego zera")
+        }
         super(converted)
+    }
+
+    report() {
+        return `${this.#orig_value}°F`
     }
 }
 
+class Kelvin extends Temperature {
+    #orig_value
+    constructor(value) {
+        this.#orig_value = value
+        if(value < 0) {
+            throw new Error("Próbowano skonstruować temperaturę niższą od absolutnego zera")
+        }
+        let converted = value - 273.15
+        super(converted)
+    }
+
+    report() {
+        return `${this.#orig_value}K`
+    }
+}
 class Mixed {
     // name - nasze puree lub drink może się jakoś nazywać; defaultowo - "item1+item2+item3..." ale można też w konstruktorze podać
     //lista rzeczy

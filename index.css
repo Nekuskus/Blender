@@ -2,6 +2,15 @@
     --bg-opacity: 0;
 }
 
+[data-tooltip]:hover::after {
+    display: block;
+    position: absolute;
+    content: attr(data-tooltip);
+    border: 1px solid black;
+    background: #eee;
+    padding: .25em;
+}
+
 body {
     font-family: Consolas, 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     color: black;
@@ -63,9 +72,9 @@ div#lid-label {
     transform: translate(-50%, 0);
 }
 
-div#buttons {
+form#init-form {
     position: absolute;
-    top: 1000px;
+    top: 600px;
 }
 
 div#orders-panel, div#settings-panel {
@@ -155,21 +164,21 @@ div#status-panel {
     padding: 10px;
 }
 
-div#specs {
+div.specs {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(25%, 1fr));
 }
 
-div#specs > div {
+div.specs > div {
     display: flex;
     width: 100%;
     justify-content: space-between;
 }
 
-div#specs > div:nth-of-type(odd) {
+div.specs > div:nth-of-type(odd) {
     margin-right: 10px;
 }
 
-div#specs > div:nth-of-type(even) {
+div.specs > div:nth-of-type(even) {
     margin-left: 10px;
 }

@@ -18,8 +18,17 @@ class ElDev {
     */
     #psu; #voltage; #power; #status; #powerOnCounter; #usable; #breakMod
     constructor(psu, voltage, power) {
+        if(psu != "DC" && psu != "AC") {
+            throw new Error("Niepoprawny typ zasilania, musi być AC lub DC");
+        }
         this.#psu = psu
+        if(voltage == 0) {
+            throw new Error("Nominalne napięcie urządzenia nie może być zerem!");
+        }
         this.#voltage = voltage
+        if(power < 0) {
+            throw new Error("Moc urządzenia nie może być ujemna! (Może, ale układy scalone tego urządzenia nie funkcjonowały by wtedy poprawnie.)");
+        }
         this.#power = power
         this.#status = 0
         this.#powerOnCounter = 0
@@ -32,8 +41,8 @@ class ElDev {
             throw new Error("Urządzenie jest uszkodzone, nie można uruchomić.");
         }
 
-        let volts = (voltage_in == '' || parseFloat(voltage_in) == NaN) ? this.#voltage : parseFloat(voltage_in);
-        this.#breakMod = (volts >= voltage_in) ? volts/this.#voltage : (this.#voltage+(this.#voltage-volts))/this.#voltage;
+        let parsed_in = (voltage_in == '' || parseFloat(voltage_in) == NaN) ? this.#voltage : parseFloat(voltage_in);
+        this.#breakMod = (parsed_in >= this.#voltage) ? parsed_in/this.#voltage : (this.#voltage+(this.#voltage-parsed_in))/this.#voltage;
         if(this.#status != 1 && this.#status != "ON") {
             this.#powerOnCounter += 1
         }
@@ -87,6 +96,7 @@ class ElDev {
  * @param {string} str 
  */
 function unitParse(str) {
+    str = str.toLowerCase()
     if (str.includes('t')) {
         num = parseFloat(str.replace('t', '')) * 1_000_000;
     } else if (str.includes('kg')) {
@@ -107,6 +117,8 @@ function unitParse(str) {
         return parseFloat(str.replace('cm', '')) / 100;
     } else if (str.includes('dm')) {
         return parseFloat(str.replace('dm', '')) / 10;
+    } else if (str.includes('mm')) {
+        return parseFloat(str.replace('mm', '')) / 1000;
     } else if (str.includes('m')) {
         return parseFloat(str.replace('m', ''));
     } else {
@@ -147,14 +159,6 @@ class AGDDev extends ElDev {
 
     size(asArray = false) {
         return asArray ? [this.#width, this.#height, this.#depth] : { "width": this.#width, "height": this.#height, "depth": this.#depth }
-    }
-
-    getMaxVolume() {
-        return this.#width * this.#height * this.#depth
-    }
-
-    getMaxVolumeStr() {
-        return `${(this.getMaxVolume()*1_000_000).toFixed(2)}cm³`;
     }
 
     report() {
