@@ -21,23 +21,39 @@
         <h2><span id="lid-status">[Pokrywka zamknięta.]</span></h2>
     </div>
 
+    <div id="status-panel" class="initial-hide">
+        <h2>Specyfikacja i status blendera</h2>
+        <div id="specs">
+            <div>Status: <span id="on-off-span"></span></div>
+            <div>Pokrywka: <span id="lid-span"></span></div>
+        </div>
+    </div>
+
     <div id="orders-panel" class="initial-hide">
-        <h1>abc!</h1>
+        <h1>Aktualny blend...</h1>
+        <div id="ingredients">
+
+        </div>
+        <h3><span id="new-ingredient" onclick="startNewEntry()">[Dodaj nowy składnik]</span></h3>
         <hr>
+        <div id="blend-history">
+
+        </div>
     </div>
     
     <div id="settings-panel" class="initial-hide">
-        <h1>Tutaj ustawienia</h1>
+        <h1>Ustawienia</h1>
         <hr>
         <h2>Subsekcja 1</h2>
         <h3>Flavour text</h3>
     </div>
 
     <div id="control-buttons" class="initial-hide">
-        <button type="button" class="large-b" id="fix-blender">Napraw</button>
-        <button type="button" class="large-b" id="blend-start">Blenduj</button>
+        <button type="button" class="small-b" id="fix-blender">Napraw</button>
+        <button type="button" class="large-b" id="blend-start" onclick="startBlend()">Blenduj</button>
         <button type="button" class="large-b" id="blend-stop">Zatrzymaj</button>
-        <button type="button" class="small-b" id="open-close">Otwórz/Zamknij</button>
+        <button type="button" class="small-b" id="open-close" onclick="toggleLid()">Otwórz/Zamknij</button>
+        <button type="button" class="small-b" id="on-off" onclick="togglePower()">Włącz/Wyłącz</button>
     </div>
 </body>
 </html>

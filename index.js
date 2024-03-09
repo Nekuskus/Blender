@@ -67,8 +67,34 @@ async function showBlender() {
     welcome.style.opacity = '1'
     document.documentElement.style.setProperty('--bg-opacity', '0.1');
     
-    document.getElementById('lid-label').style.opacity = '1'
-    document.getElementById('orders-panel').style.opacity = '1'
-    document.getElementById('settings-panel').style.opacity = '1'
-    document.getElementById('control-buttons').style.opacity = '1'
+    document.querySelectorAll('.initial-hide').forEach(el => {
+        el.style.opacity = '1'
+    })
+}
+
+function startNewEntry() {
+    let out = document.getElementById('ingredients');
+    let p = document.createElement('p');
+    p.innerText = 'abc';
+    out.appendChild(p)
+}
+
+function toggleLid() {
+    if(blender.isLidOpen()) {
+        blender.closeLid();
+    } else {
+        blender.openLid();
+    }
+}
+
+function togglePower() {
+    if(blender.isOn()) {
+        blender.off();
+    } else {
+        blender.on();
+    }
+}
+
+function startBlend() {
+    blender.blend()
 }

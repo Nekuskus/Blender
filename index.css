@@ -73,7 +73,7 @@ div#orders-panel, div#settings-panel {
     top: 25%;
     width: 15%;
     background-color: bisque;
-    border: solid rgb(173, 132, 82) 8px;
+    border: inset rgb(173, 132, 82) 8px;
     border-radius: 5px;
     padding: 10px;
 }
@@ -96,6 +96,80 @@ div#control-buttons {
     transform: translate(-50%, 0);
 }
 
+span#new-ingredient {
+    cursor: pointer;
+}
+
+.ingredient-entry {
+    pointer-events: none;
+}
+
+.ingredient-entry::before {
+    content: "❌";
+    pointer-events: all;
+}
+
 div#control-buttons button {
-    margin: 3%;
+    margin: 2%;
+    font-size: large;
+    font-family: Consolas, 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    border: inset 3.5px rgb(173, 132, 82);
+    background-color: rgb(243, 208, 164);
+}
+
+.small-b {
+    position: relative;
+    display: inline;
+    width: min(14vw, 369px);
+    height: 3.5vh;
+}
+
+.large-b {
+    position: relative;
+    width: min(20vw, 369px);
+    height: 5vh;
+}
+
+button.broken-btn::before {
+    position: absolute;
+    content: ' ';
+    z-index: 4;
+    display: block;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-image: url('assets/x.png');
+    background-position: 50% 0;
+    background-size: 100% 100%;
+}
+
+div#status-panel {
+    position: absolute;
+    top: 1%;
+    left: 63%;
+    width: 35%;
+    background-color: bisque;
+    border: inset rgb(173, 132, 82) 8px;
+    border-radius: 5px;
+    padding: 10px;
+}
+
+div#specs {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(25%, 1fr));
+}
+
+div#specs > div {
+    display: flex;
+    width: 100%;
+    justify-content: space-between;
+}
+
+div#specs > div:nth-of-type(odd) {
+    margin-right: 10px;
+}
+
+div#specs > div:nth-of-type(even) {
+    margin-left: 10px;
 }

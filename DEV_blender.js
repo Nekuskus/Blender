@@ -38,6 +38,12 @@ class Blender extends AGDDev {
         this.#img.style.height = '67vh';
 
         this.#img.style.opacity = '1';
+
+        [...document.getElementById('control-buttons').children].forEach(el => {
+            if(el.id != 'fix-blender') {
+                el.classList.add('broken-btn');
+            }
+        })
         
         super.breakdown()
     }
@@ -51,12 +57,26 @@ class Blender extends AGDDev {
         let label = document.getElementById('lid-status');
         label.style.color = '#ca2525';
         label.innerText = '[Pokrywka otwarta.]';
+
+        let label2 = document.getElementById('on-off-span')
+        label2.innerText = 'otwarta'
+        label2.style.color = 'red'
     }
 
-    async on() {
-        if(!this.isUsable()) {
-            throw new Error("Urządzenie jest uszkodzone, nie można uruchomić.");
-        }
+    closeLid() {
+        this.#isLidOpen = false;
+        let label = document.getElementById('lid-status');
+        label.style.color = 'black';
+        label.innerText = '[Pokrywka zamknięta.]';
+        
+        let label2 = document.getElementById('on-off-span')
+        label2.innerText = 'zamknięta'
+        label2.style.color = 'black'
+    }
+
+
+    async on(voltage_in = '') {
+        super.on(voltage_in)
         
         this.#img.style.opacity = '0';
         
@@ -66,14 +86,14 @@ class Blender extends AGDDev {
         this.#img.style.height = '67vh';
 
         this.#img.style.opacity = '1';
-        
-        super.on()
+        document.getElementById('on-off').style.backgroundColor = 'green'
+        let label = document.getElementById('on-off-span')
+        label.innerText = 'on'
+        label.style.color = 'green'
     }
 
     async off() {
-        if(!this.isUsable()) {
-            throw new Error("Urządzenie jest uszkodzone, nie można wyłaczyć.");
-        }
+        super.off()
         
         this.#img.style.opacity = '0';
         
@@ -84,16 +104,12 @@ class Blender extends AGDDev {
 
         this.#img.style.opacity = '1';
         
-        super.on()
-    }
+        document.getElementById('on-off').style.backgroundColor = 'red'
 
-    closeLid() {
-        this.#isLidOpen = false;
-        let label = document.getElementById('lid-status');
-        label.style.color = 'black';
-        label.innerText = '[Pokrywka zamknięta.]';
+        let label = document.getElementById('on-off-span')
+        label.innerText = 'off'
+        label.style.color = 'red'
     }
-
     getMaxLoad() {
         return this.#maxLoad;
     }

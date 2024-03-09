@@ -48,6 +48,10 @@ class ElDev {
         this.#status = 0
     }
 
+    isOn() {
+        return this.#status == 1 || this.#status == "ON"
+    }
+
     breakdown() {
         this.#usable = false;
         throw new Error("Urządzenie zostało uszkodzone.");
