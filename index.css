@@ -77,10 +77,7 @@ form#init-form {
     top: 600px;
 }
 
-div#orders-panel, div#settings-panel {
-    position: absolute;
-    top: 25%;
-    width: 15%;
+div#orders-panel, div#history-panel {
     background-color: bisque;
     border: inset rgb(173, 132, 82) 8px;
     border-radius: 5px;
@@ -88,11 +85,16 @@ div#orders-panel, div#settings-panel {
 }
 
 div#orders-panel {
-    left: 1%;
+    position: absolute;
+    top: 1%;
+    left: 0;
+    width: 32.5%;
+    margin-left: 1%;
 }
 
-div#settings-panel {
-    left: 83%;
+div#history-panel {
+    margin-top: 5vh;
+    width: 100%;
 }
 
 div#control-buttons {
@@ -153,20 +155,36 @@ button.broken-btn::before {
     background-size: 100% 100%;
 }
 
-div#status-panel {
+button.broken-btn {
+    pointer-events: none;
+}
+
+div#right-wrapper {
     position: absolute;
     top: 1%;
-    left: 63%;
+    right: 0;
     width: 35%;
+    margin-right: 3%;
+}
+
+div#status-panel {
+    width: 100%;
     background-color: bisque;
     border: inset rgb(173, 132, 82) 8px;
     border-radius: 5px;
     padding: 10px;
 }
 
-div.specs {
+div.specs:nth-of-type(1) {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(25%, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(30%, 1fr));
+    column-gap: 10px;
+}
+
+div.specs:nth-of-type(2) {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(50%, 1fr));
+    column-gap: 10px;
 }
 
 div.specs > div {
@@ -175,10 +193,6 @@ div.specs > div {
     justify-content: space-between;
 }
 
-div.specs > div:nth-of-type(odd) {
-    margin-right: 10px;
-}
-
-div.specs > div:nth-of-type(even) {
-    margin-left: 10px;
+div.specs:nth-of-type(1) > div > span {
+    color: grey;
 }

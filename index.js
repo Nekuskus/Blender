@@ -43,8 +43,51 @@ async function showBlender() {
     }
     // Do not enter proper Blender UI if blender build failed
     try {
+        let voltage = parseFloat(form.voltage.value)
+        if (voltage == NaN) {
+            form.voltage.focus()
+            return;
+        }
+        
+        let wattage = parseFloat(form.power.value)
+        if (wattage == NaN) {
+            form.power.focus()
+            return;
+        }
+        
+        let mtbf = parseFloat(form.mtbf.value)
+        if (mtbf == NaN) {
+            form.mtbf.focus()
+            return;
+        }
+        
+        let energyClass = form.energyClass.value
+        let psu = form.psu.value
+        
+        let max_load = form['max-load'].value
 
-        blender = new Blender();
+        let temp_val = parseFloat(form['temp-val'].value)
+
+        let temp = (form['temp-type'].value == "C" ? new Celcius(temp_val) : form['temp-type'].value == "F" ? new Fahrenheit(temp_val) : new Kelvin(temp_val));
+
+        let width = form.width.value;
+        let depth = form.depth.value;
+        let height = form.height.value;
+        let weight = form.weight.value;
+
+        blender = new Blender(
+            wattage,
+            voltage,
+            mtbf,
+            energyClass,
+            psu,
+            max_load,
+            temp,
+            width,
+            depth,
+            height,
+            weight
+        )
         blender.on();
         blender.closeLid();
 
@@ -85,9 +128,69 @@ async function showBlender() {
 
 function startNewEntry() {
     let out = document.getElementById('ingredients');
-    let p = document.createElement('p');
-    p.innerText = 'abc';
-    out.appendChild(p)
+    let div = document.createElement('div');
+    
+    let name = document.getElementById('new-name').value.trim();
+    let type = document.getElementById('new-type').value;
+    let count = document.getElementById('new-count').value.trim();
+    let weight = document.getElementById('new-weight').value.trim();
+    if(name == "") throw new Error("Nie podano nazwy składnika.")
+    if(weight == "") throw new Error("Nie podano wagi(jedzenie)/objętości(ciecze) składnika.")
+
+    if(type == "Fruit") {
+        if(count == "") throw new Error("Nie podano ilości składnika.")
+        let ingr = new Fruit(name, count, weight);
+        blender.insertObject(ingr);
+
+        div.innerText = `(${name})${type != "Foodstuff" ? ` [${ingr.getType()}] `: ' ' }<${count} sztuk> ${weight}`;
+    } else if (type == "Vegetable") {
+        if(count == "") throw new Error("Nie podano ilości składnika.")
+        let ingr = new Vegetable(name, count, weight);
+        blender.insertObject(ingr);
+
+        div.innerText = `(${name})${type != "Foodstuff" ? ` [${ingr.getType()}] `: ' ' }<${count} sztuk> ${weight}`;
+    } else if (type == "Foodstuff") {
+        if(count == "") throw new Error("Nie podano ilości składnika.")
+        let ingr = new EdibleObject(name, count, weight);
+        blender.insertObject(ingr);
+
+        div.innerText = `(${name})${type != "Foodstuff" ? ` [${ingr.getType()}] `: ' ' }<${count} sztuk> ${weight}`;
+    } else if (type == "Liquid") {
+        let temp_val = document.getElementById('new-temp').value.trim();
+        if(temp_val == "" || parseFloat(temp_val) == NaN) throw new Error("Podano nieprawidłową temperaturę cieczy.")
+    
+        let temp_type = document.getElementById('new-temp-type').value;
+        let temp = new Temperature(0);
+
+        if(temp_type == "C") {
+            temp = new Celcius(temp_val);
+        } else if (temp_type == "F") {
+            temp = new Fahrenheit(temp_val);
+        } else if (temp_type == "K") {
+            temp = new Kelvin(temp_val);
+        }
+
+        let ingr = new Liquid(name, count, weight, temp, 'Ciecz');
+        blender.insertLiquid(ingr);
+
+        div.innerText = `(${name})${type != "Foodstuff" ? ` [${ingr.getType()}] `: ' ' }<${weight} na litr> ${count}`;
+    }
+    
+    div.classList.add('ingredient-entry');
+    div.addEventListener('click', () => {
+        let name = div.innerText.match(/\((.*?)\)/);
+        console.log(div.innerText)
+        if(name) name = name[0].replace('(', '').replace(')', '');
+        
+        let type = div.innerText.match(/\[(.*?)\]/);
+        if(type) type = type[0].replace('[', '').replace(']', '');
+        
+        let count = div.innerText.trim().split(' ').slice(-1)[0].trim();
+        if(count.includes('(') || count.includes(')') || count.includes('[') || count.includes(']')) count = null;
+        blender.removeObject(name, type != null ? type : '', count != null ? count : '')
+        out.removeChild(div);
+    })
+    out.appendChild(div)
 }
 
 function toggleLid() {

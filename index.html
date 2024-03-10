@@ -17,8 +17,11 @@
     <form id="init-form">
         <!-- input:number[name=voltage]+label[for=voltage]{ [V] Napięcie nominalne}+br -->
         <input type="number" name="voltage" value="230"><label for="voltage"> [V] Napięcie nominalne</label><br>
+
         <input type="number" name="power" value="1200"><label for="power"> [W] Moc</label><br>
-        <input type="number" name="mtbf" value="50"><label for="mtbf" data-tooltip="Średni czas między awariami urządzenia, w minutach"> [min.] MTBF</label><br>
+
+        <input type="number" name="mtbf" value="900"><label for="mtbf" data-tooltip="Średni czas między awariami urządzenia, w godzinach"> [h] MTBF</label><br>
+
         <select name="energyClass">
             <option value="A">A</option>
             <option value="B" selected>B</option>
@@ -27,19 +30,26 @@
             <option value="E">E</option>
             <option value="F">F</option>
         </select><label for="energyClass" data-tooltip="Klasa Energetyczna urządzenia, według standardu Unijnego post-2023"> Klasa energetyczna</label><br>
+
         <select name="psu">
             <option value="AC" selected>AC</option>
             <option value="DC">DC</option>
         </select><label for="psu" data-tooltip="AC - prąd zmienny, DC - prąd stały (blender wspiera tylko prąd zmienny)"> Typ zasilania</label><br>
+
         <input type="text" name="max-load" value="5kg"><label for="max-load" data-tooltip="Maks. waga zawartości blendera"> [t|kg|dag|mg|g] Maksymalny udźwig blendera</label><br>
+
         <input type="number" name="temp-val" value="35"> [<select name="temp-type">
             <option value="C" selected>°C</option>
             <option value="F">°F</option>
             <option value="K">K</option>
         </select><label for="temp-val" data-tooltip="Niektóre blendery nie pracują dobrze przy gorącej cieczy, przekroczenie tego limitu może prowadzić do uszkodzeń urządzenia.">] Maksymalna temperatura cieczy</label><br>
+
         <input type="text" name="width" value="15cm"><label for="width" data-tooltip="Ta wartość wpływa na wyliczenie objętości pojemnika blendera"> [km|dm|cm|m|mm] Szerokość</label><br>
+
         <input type="text" name="depth" value="35cm"><label for="depth" data-tooltip="Ta wartość wpływa na wyliczenie objętości pojemnika blendera"> [km|dm|cm|m|mm] Głębokość</label><br>
+
         <input type="text" name="height" value="38cm"><label for="height" data-tooltip="Ta wartość wpływa na wyliczenie objętości pojemnika blendera"> [km|dm|cm|m|mm] Wysokość</label><br>
+
         <input type="text" name="weight" value="3.05kg"><label for="weight"> [t|kg|dag|mg|g] Waga</label><br>
 
         <br>
@@ -50,35 +60,76 @@
         <h2><span id="lid-status">[Pokrywka zamknięta.]</span></h2>
     </div>
 
-    <div id="status-panel" class="initial-hide">
-        <h2>Specyfikacja i status blendera</h2>
-        <div class="specs">
-
+    <div id="right-wrapper">
+        <div id="status-panel" class="initial-hide">
+            <h2>Specyfikacja i status blendera</h2>
+            <div class="specs">
+                <!-- div{Moc: }>span[id=power-span] -->
+                <div>Moc: <span id="power-span"></span></div>
+                <div>Woltaż nominalny: <span id="voltage-span"></span></div>
+                <div>MTBF: <span id="mtbf-span"></span></div>
+                <div>Klasa energetyczna: <span id="energy-class-span"></span></div>
+                <div>Typ zasilania: <span id="psu-span"></span></div>
+                <div>Maksymalne obciążenie: <span id="max-load-span"></span></div>
+                <div>Maksymalna objętość zawartości: <span id="max-volume-span"></span></div>
+                <div>Maksymalna temperatura cieczy: <span id="max-temp-span"></span></div>
+                <div>Szerokość: <span id="width-span"></span></div>
+                <div>Wysokość: <span id="height-span"></span></div>
+                <div>Głębokość: <span id="depth-span"></span></div>
+                <div>Waga: <span id="weight-span"></span></div>
+            </div>
+            <hr>
+            <div class="specs">
+                <div>Status: <span id="on-off-span"></span></div>
+                <div>Pokrywka: <span id="lid-span"></span></div>
+                <div>Aktualne obciążenie: <span id="cur-load-span"></span></div>
+                <div>Aktualnie wypełniona objętość: <span id="cur-volume-span"></span></div>
+                <div>Ilość uruchomień: <span id="power-on-span"></span></div>
+                <div>Cykl życia: <span id="lifecycle-span"></span></div>
+                <div>Czas uruchomienia: <span id="time-span"></span></div>
+                <div>Estymata MTBF: <div><span id="estimate-span"></span>/<span id="max-estimate-span"></span></div></div>
+            </div>
         </div>
-        <hr>
-        <div class="specs">
-            <div>Status: <span id="on-off-span"></span></div>
-            <div>Pokrywka: <span id="lid-span"></span></div>
+        
+        <div id="history-panel" class="initial-hide">
+            <h1>Historia blendów</h1>
+            <hr>
+            <div id="blend-history">
+            </div>
         </div>
     </div>
 
     <div id="orders-panel" class="initial-hide">
-        <h1>Aktualny blend...</h1>
-        <div id="ingredients">
-
+        <h1>Aktualny blend... <span style="font-size: large;"><br>V: <span id="small-v">0</span>/<span id="small-v-max"></span>; m: <span id="small-m">0</span>/<span id="small-m-max"></span></span></h1>
+        <div style="display: grid; text-align: right; grid-template-columns: repeat(5, 1fr)">
+            <span style="margin-right: 2%;">Nazwa</span>
+            <span style="margin-right: 2%;">Typ</span>
+            <span style="margin-right: 2%;">Ilość / Objętość</span>
+            <span style="margin-right: 2%;">Waga sztuki / Waga litru</span>
+            <span style="margin-right: 2%;">Temperatura (ciecze)</span>
+            <input id="new-name" type="text" size="20">
+            <select id="new-type">
+                <option value="Fruit">Owoc</option>
+                <option value="Vegetable">Warzywo</option>
+                <option value="Foodstuff" selected>Jedzenie</option>
+                <option value="Liquid">Ciecz</option>
+            </select>
+            <input id="new-count" type="text" size="3">
+            <input id="new-weight" type="text" size="7">
+            <div>
+                <input id="new-temp" type="number" size="6">
+                <select id="new-temp-type">
+                    <option value="C" selected>°C</option>
+                    <option value="F">°F</option>
+                    <option value="K">K</option>
+                </select>
+            </div>
         </div>
         <h3><span id="new-ingredient" onclick="startNewEntry()">[Dodaj nowy składnik]</span></h3>
         <hr>
-        <div id="blend-history">
+        <div id="ingredients">
 
         </div>
-    </div>
-    
-    <div id="settings-panel" class="initial-hide">
-        <h1>Ustawienia</h1>
-        <hr>
-        <h2>Subsekcja 1</h2>
-        <h3>Flavour text</h3>
     </div>
 
     <div id="control-buttons" class="initial-hide">

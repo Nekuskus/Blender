@@ -1,4 +1,4 @@
-const energyClasses = {'A': 1.2, 'B': 1, 'C': 0.95, 'D': 0.85, 'E': 0.75, 'F': 0.60} // Post-2023 nie ma już A+, A++, i A+++
+const energyClasses = {'A': 0.75, 'B': 1, 'C': 1.05, 'D': 1.15, 'E': 1.30, 'F': 1.55} // Post-2023 nie ma już A+, A++, i A+++
 
 class ElDev {
     /*Electricity device
@@ -16,7 +16,7 @@ class ElDev {
         off() - device disable
         report() - show status info
     */
-    #psu; #voltage; #power; #status; #powerOnCounter; #usable; #breakMod
+    #psu; #voltage; #power; #status; #powerOnCounter; #usable; #breakMod; #runtime; #runtimeSinceBreak; #runtimeInterval;
     constructor(psu, voltage, power) {
         if(psu != "DC" && psu != "AC") {
             throw new Error("Niepoprawny typ zasilania, musi być AC lub DC");
@@ -34,7 +34,39 @@ class ElDev {
         this.#powerOnCounter = 0
         this.#usable = true
         this.#breakMod = 0;
+        this.#runtime = 0;
+        this.#runtimeSinceBreak = 0;
+        this.#runtimeInterval = -1;
     }
+
+    getPSU() {
+        return this.#psu;
+    }
+
+    getPower() {
+        return this.#power
+    }
+
+    getVoltage() {
+        return this.#voltage
+    }
+
+    incrementRuntime(n = 3555) {
+        this.#runtime += n;
+        this.#runtimeSinceBreak += n;
+        
+        document.getElementById('time-span').innerText = `${this.runtime()}s`
+        document.getElementById('estimate-span').innerText = `${(this.runtimeSinceBreak()/(60*60)).toFixed(4)}`
+    }
+
+    runtime() {
+        return this.#runtime;
+    }
+
+    runtimeSinceBreak() {
+        return this.#runtimeSinceBreak;
+    }
+
 
     on(voltage_in = '') {
         if(!this.#usable) {
@@ -43,8 +75,12 @@ class ElDev {
 
         let parsed_in = (voltage_in == '' || parseFloat(voltage_in) == NaN) ? this.#voltage : parseFloat(voltage_in);
         this.#breakMod = (parsed_in >= this.#voltage) ? parsed_in/this.#voltage : (this.#voltage+(this.#voltage-parsed_in))/this.#voltage;
-        if(this.#status != 1 && this.#status != "ON") {
+        if(!this.isOn()) {
             this.#powerOnCounter += 1
+            document.getElementById('power-on-span').innerText = `${this.#powerOnCounter} razy`
+        }
+        if(this.#runtimeInterval == -1) {
+            this.#runtimeInterval = setInterval(this.incrementRuntime.bind(this), 1000)
         }
         this.#status = 1
     }
@@ -52,6 +88,11 @@ class ElDev {
     off() {
         if(!this.#usable) {
             throw new Error("Urządzenie jest uszkodzone, nie można wyłaczyć.");
+        }
+
+        if(this.#runtimeInterval != -1) {
+            clearInterval(this.#runtimeInterval);
+            this.#runtimeInterval = -1;
         }
 
         this.#status = 0
@@ -63,6 +104,7 @@ class ElDev {
 
     breakdown() {
         this.#usable = false;
+        this.#runtimeSinceBreak = 0;
         throw new Error("Urządzenie zostało uszkodzone.");
     }
 
@@ -93,7 +135,8 @@ class ElDev {
 }
 /**
  * 
- * @param {string} str 
+ * @param {string} str
+ * @returns {Count} 
  */
 function unitParse(str) {
     str = str.toLowerCase()
@@ -106,23 +149,45 @@ function unitParse(str) {
     } else if (str.includes('mg')) {
         num = parseFloat(str.replace('mg', '')) / 1000;
     } else if (str.includes('g')) {
-        return parseFloat(str.replace('g', ''));
+        num = parseFloat(str.replace('g', ''));
     } else if (str.includes('ml')) {
-        return parseFloat(str.replace('ml', '')) / 1000;
+        num = parseFloat(str.replace('ml', '')) / 1000;
     } else if (str.includes('l')) {
-        return parseFloat(str.replace('l', ''));
+        num = parseFloat(str.replace('l', ''));
     } else if (str.includes('km')) {
-        return parseFloat(str.replace('km', '')) * 1000;
+        num = parseFloat(str.replace('km', '')) * 1000;
     } else if (str.includes('cm')) {
-        return parseFloat(str.replace('cm', '')) / 100;
+        num = parseFloat(str.replace('cm', '')) / 100;
     } else if (str.includes('dm')) {
-        return parseFloat(str.replace('dm', '')) / 10;
+        num = parseFloat(str.replace('dm', '')) / 10;
     } else if (str.includes('mm')) {
-        return parseFloat(str.replace('mm', '')) / 1000;
+        num = parseFloat(str.replace('mm', '')) / 1000;
     } else if (str.includes('m')) {
-        return parseFloat(str.replace('m', ''));
+        num = parseFloat(str.replace('m', ''));
     } else {
-        return parseFloat(str);
+        num = parseFloat(str);
+    }
+
+    if(num == NaN) {
+        throw new Error("Wartość podana do unitParse() nie zawiera wartości liczbowej");
+    }
+
+    return new Count(num, str);
+}
+
+class Count {
+    #value; #orig_value;
+    constructor(num, orig_value) {
+        this.#value = num
+        this.#orig_value = orig_value
+    }
+
+    getValue() {
+        return this.#value;
+    }
+
+    getOriginal() {
+        return this.#orig_value
     }
 }
 
@@ -152,13 +217,45 @@ class AGDDev extends ElDev {
         this.#lCycles = 0
         this.#typeDev = typeDev
         this.#width = unitParse(width)
+        if(this.#width.getValue() <= 0) {
+            throw new Error("Wymiary urządzenia nie mogą być zerem lub ujemne (szerokość)")
+        }
         this.#height = unitParse(height)
+        if(this.#height.getValue() <= 0) {
+            throw new Error("Wymiary urządzenia nie mogą być zerem lub ujemne (wysokość)")
+        }
         this.#depth = unitParse(depth)
+        if(this.#depth.getValue() <= 0) {
+            throw new Error("Wymiary urządzenia nie mogą być zerem lub ujemne (głębokość)")
+        }
         this.#weight = unitParse(weight)
+        if(this.#weight.getValue() <= 0) {
+            throw new Error("Wymiary urządzenia nie mogą być zerem lub ujemne (waga)")
+        }
+    }
+
+    getMTBF() {
+        return this.#MTBF
+    }
+
+    getEnergyClass() {
+        return this.#energyClass
+    }
+
+    getLCycles() {
+        return this.#lCycles;
+    }
+
+    getWeight() {
+        return this.#weight
     }
 
     size(asArray = false) {
-        return asArray ? [this.#width, this.#height, this.#depth] : { "width": this.#width, "height": this.#height, "depth": this.#depth }
+        return asArray ? [this.#width.getValue(), this.#height.getValue(), this.#depth.getValue()] : { "width": this.#width.getValue(), "height": this.#height.getValue(), "depth": this.#depth.getValue() }
+    }
+
+    sizeOrg(asArray = false) {
+        return asArray ? [this.#width.getOriginal(), this.#height.getOriginal(), this.#depth.getOriginal()] : { "width": this.#width.getOriginal(), "height": this.#height.getOriginal(), "depth": this.#depth.getOriginal() }
     }
 
     report() {
