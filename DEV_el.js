@@ -1,4 +1,5 @@
 const energyClasses = {'A': 0.75, 'B': 1, 'C': 1.05, 'D': 1.15, 'E': 1.30, 'F': 1.55} // Post-2023 nie ma już A+, A++, i A+++
+let TIMEDELTA = 3555;
 
 class ElDev {
     /*Electricity device
@@ -16,7 +17,7 @@ class ElDev {
         off() - device disable
         report() - show status info
     */
-    #psu; #voltage; #power; #status; #powerOnCounter; #usable; #breakMod; #runtime; #runtimeSinceBreak; #runtimeInterval;
+    #psu; #voltage; #curVoltage; #power; #status; #powerOnCounter; #usable; #breakMod; #runtime; #runtimeSinceBreak; #runtimeInterval; #powerUsed;
     constructor(psu, voltage, power) {
         if(psu != "DC" && psu != "AC") {
             throw new Error("Niepoprawny typ zasilania, musi być AC lub DC");
@@ -29,11 +30,13 @@ class ElDev {
         if(power < 0) {
             throw new Error("Moc urządzenia nie może być ujemna! (Może, ale układy scalone tego urządzenia nie funkcjonowały by wtedy poprawnie.)");
         }
+        this.#curVoltage = 0;
         this.#power = power
         this.#status = 0
         this.#powerOnCounter = 0
         this.#usable = true
         this.#breakMod = 0;
+        this.#powerUsed = 0;
         this.#runtime = 0;
         this.#runtimeSinceBreak = 0;
         this.#runtimeInterval = -1;
@@ -51,12 +54,24 @@ class ElDev {
         return this.#voltage
     }
 
-    incrementRuntime(n = 3555) {
-        this.#runtime += n;
-        this.#runtimeSinceBreak += n;
+    getCurVoltage() {
+        return this.#curVoltage;
+    }
+
+    incrementRuntime() {
+        this.#runtime += TIMEDELTA;
+        this.#runtimeSinceBreak += TIMEDELTA;
         
+        this.#powerUsed += TIMEDELTA * (this.getPower() / 3600000) / 5 //1/5 zużycia prądu na idle, pozostałe 4/5 dodaje się podczas blendowania
+        document.getElementById('power-use-span').innerText = `${this.#powerUsed.toFixed(4)}kW`
+        
+
         document.getElementById('time-span').innerText = `${this.runtime()}s`
         document.getElementById('estimate-span').innerText = `${(this.runtimeSinceBreak()/(60*60)).toFixed(4)}`
+    }
+
+    incrementPowerUsed(n) {
+        this.#powerUsed += n;
     }
 
     runtime() {
@@ -67,13 +82,18 @@ class ElDev {
         return this.#runtimeSinceBreak;
     }
 
+    powerUsed() {
+        return this.#powerUsed;
+    }
 
     on(voltage_in = '') {
         if(!this.#usable) {
             throw new Error("Urządzenie jest uszkodzone, nie można uruchomić.");
         }
 
-        let parsed_in = (voltage_in == '' || parseFloat(voltage_in) == NaN) ? this.#voltage : parseFloat(voltage_in);
+        let parsed_in = (voltage_in == '' || isNaN(parseFloat(voltage_in))) ? this.#voltage : parseFloat(voltage_in);
+
+        this.#curVoltage = parsed_in;
         this.#breakMod = (parsed_in >= this.#voltage) ? parsed_in/this.#voltage : (this.#voltage+(this.#voltage-parsed_in))/this.#voltage;
         if(!this.isOn()) {
             this.#powerOnCounter += 1
@@ -132,6 +152,10 @@ class ElDev {
     curBreakageMod() {
         return this.#breakMod;
     }
+
+    fix() {
+        this.#usable = true;
+    }
 }
 /**
  * 
@@ -168,7 +192,7 @@ function unitParse(str) {
         num = parseFloat(str);
     }
 
-    if(num == NaN) {
+    if(isNaN(num)) {
         throw new Error("Wartość podana do unitParse() nie zawiera wartości liczbowej");
     }
 
@@ -240,6 +264,10 @@ class AGDDev extends ElDev {
 
     getEnergyClass() {
         return this.#energyClass
+    }
+
+    getEnergyClassCoefficient() {
+        return energyClasses[this.#energyClass];
     }
 
     getLCycles() {

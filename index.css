@@ -196,3 +196,9 @@ div.specs > div {
 div.specs:nth-of-type(1) > div > span {
     color: grey;
 }
+
+div#voltage-div {
+    position: relative;
+    top: 2vh;
+
+}

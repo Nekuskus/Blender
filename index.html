@@ -16,11 +16,11 @@
 
     <form id="init-form">
         <!-- input:number[name=voltage]+label[for=voltage]{ [V] Napięcie nominalne}+br -->
-        <input type="number" name="voltage" value="230"><label for="voltage"> [V] Napięcie nominalne</label><br>
+        <input type="number" name="voltage" value="230"><label for="voltage" data-tooltip="Odejście na wejściu od wartości nominalnej powoduje problemu w działaniu urządzenia i szybsze zepsucie."> [V] Napięcie nominalne</label><br>
 
-        <input type="number" name="power" value="1200"><label for="power"> [W] Moc</label><br>
+        <input type="number" name="power" value="1200"><label for="power" data-tooltip="Od mocy zależy prędkość pracy Blendera, ale też pobór prądu. Urządzenie zasila także nagłośnienie sali, stąd bardzo wysokie zużycie energii."> [W] Moc</label><br>
 
-        <input type="number" name="mtbf" value="900"><label for="mtbf" data-tooltip="Średni czas między awariami urządzenia, w godzinach"> [h] MTBF</label><br>
+        <input type="number" name="mtbf" value="450"><label for="mtbf" data-tooltip="Średni czas między awariami urządzenia, w godzinach, przy normalnym zużyciu prądu i klasie energetycznej B"> [h] MTBF</label><br>
 
         <select name="energyClass">
             <option value="A">A</option>
@@ -82,12 +82,19 @@
             <div class="specs">
                 <div>Status: <span id="on-off-span"></span></div>
                 <div>Pokrywka: <span id="lid-span"></span></div>
+                <div>Aktualny woltaż: <span id="cur-volt-span"></span></div>
                 <div>Aktualne obciążenie: <span id="cur-load-span"></span></div>
                 <div>Aktualnie wypełniona objętość: <span id="cur-volume-span"></span></div>
                 <div>Ilość uruchomień: <span id="power-on-span"></span></div>
                 <div>Cykl życia: <span id="lifecycle-span"></span></div>
                 <div>Czas uruchomienia: <span id="time-span"></span></div>
                 <div>Estymata MTBF: <div><span id="estimate-span"></span>/<span id="max-estimate-span"></span></div></div>
+                <div>Łączne zużycie prądu: <div><span id="power-use-span"></span> (<span id="kwh-span"></span>)</div></div>
+            </div>
+            <hr>
+            <div class="specs">
+                <div>Breakdown chance na tick: <div><span id="chance-span"></span>%</div></div>
+                <div>Postęp aktualnego blendu: <div><span id="progress-span">N/A</span>/100%</div></div>
             </div>
         </div>
         
@@ -104,7 +111,7 @@
         <div style="display: grid; text-align: right; grid-template-columns: repeat(5, 1fr)">
             <span style="margin-right: 2%;">Nazwa</span>
             <span style="margin-right: 2%;">Typ</span>
-            <span style="margin-right: 2%;">Ilość / Objętość</span>
+            <span style="margin-right: 2%;" data-tooltip="Ilość [bez jedn.] - stałe; Objętość [l|ml] - ciecze">Ilość / Objętość</span>
             <span style="margin-right: 2%;">Waga sztuki / Waga litru</span>
             <span style="margin-right: 2%;">Temperatura (ciecze)</span>
             <input id="new-name" type="text" size="20">
@@ -133,11 +140,11 @@
     </div>
 
     <div id="control-buttons" class="initial-hide">
-        <button type="button" class="small-b" id="fix-blender">Napraw</button>
+        <button type="button" class="small-b" id="fix-blender" onclick="fixBlender()">Napraw w serwisie</button>
         <button type="button" class="large-b" id="blend-start" onclick="startBlend()">Blenduj</button>
-        <button type="button" class="large-b" id="blend-stop">Zatrzymaj</button>
+        <button type="button" class="large-b" id="blend-stop" onclick="finishBlend()">Zatrzymaj</button>
         <button type="button" class="small-b" id="open-close" onclick="toggleLid()">Otwórz/Zamknij</button>
-        <button type="button" class="small-b" id="on-off" onclick="togglePower()">Włącz/Wyłącz</button>
+        <button type="button" class="small-b" id="on-off" onclick="togglePower()">Włącz/Wyłącz<div id="voltage-div"><input id="cur-v-input" name="cur-v-input" type="number" min="0" step="5" value="230"><br><label for="cur-v-input">[V] woltaż wejściowy</label></div></button>
     </div>
 </body>
 </html>

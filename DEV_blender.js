@@ -1,6 +1,8 @@
+let rand = (min, max) => (Math.random() * (max - min) + min);
+
 class Blender extends AGDDev {
-    #isLidOpen; #maxLoad; #maxLiquidTemp; #foodstuffsList; #liquidsList; #blend_interval; #img;
-    constructor(power = 1200, voltage = 230, MTBF = 900, energyClass = 'B', psu = "AC", maxLoad = "5kg", maxLiquidTemp = new Celcius(35), width = "15cm", height = "38cm", depth = "15cm", weight = "3.05kg") {
+    #isLidOpen; #maxLoad; #maxLiquidTemp; #foodstuffsList; #liquidsList; #blend_interval; #img; #blendProgress; #blendTarget; #curImage;
+    constructor(power = 1200, voltage = 230, MTBF = 450, energyClass = 'B', psu = "AC", maxLoad = "5kg", maxLiquidTemp = new Celcius(35), width = "15cm", height = "38cm", depth = "15cm", weight = "3.05kg") {
         if(psu == "DC") {
             throw new Error("Blender nie może operować na prądzie stałym.")
         }
@@ -24,6 +26,9 @@ class Blender extends AGDDev {
         this.#foodstuffsList = [];
         this.#liquidsList = [];
         this.#blend_interval = -1;
+        this.#blendProgress = 0;
+        this.#blendTarget = -1;
+        this.#curImage = -1;
         this.#img = document.getElementById('blender');
         console.log(super.report());
 
@@ -50,6 +55,9 @@ class Blender extends AGDDev {
         document.getElementById('time-span').innerText = `${this.runtime()}s`
         document.getElementById('estimate-span').innerText = `${(this.runtimeSinceBreak()/(60*60)).toFixed(4)}`
         document.getElementById('max-estimate-span').innerText = `${MTBF}h`
+        document.getElementById('power-use-span').innerText = `0kW`
+        document.getElementById('kwh-span').innerText = `${this.getPower()/1000}kWh`
+        document.getElementById('chance-span').innerText = `${(250 * (TIMEDELTA / (this.getMTBF()*60*60)) * this.getEnergyClassCoefficient() * this.curBreakageMod()).toFixed(2)}`
     }
     
 
@@ -78,7 +86,13 @@ class Blender extends AGDDev {
                 el.classList.add('broken-btn');
             }
         })
+
+        if(this.#blend_interval != -1) {
+            this.finish(true)
+        }
         
+        this.off(true)
+
         super.breakdown()
     }
 
@@ -87,6 +101,10 @@ class Blender extends AGDDev {
     }
 
     openLid() {
+        if(this.#blend_interval != -1) {
+            throw new Error("Blender aktualnie pracuje, nie można otworzyć") ;
+        }
+
         this.#isLidOpen = true;
         let label = document.getElementById('lid-status');
         label.style.color = '#ca2525';
@@ -116,26 +134,42 @@ class Blender extends AGDDev {
         
         await delay(2500);
         
-        this.#img.setAttribute('src', 'assets/blender_static.jpg');
-        this.#img.style.height = '67vh';
-
+        if(this.#blend_interval == -1) {
+            this.#img.setAttribute('src', 'assets/blender_static.jpg');
+            this.#img.style.height = '67vh';
+        }
+        
         this.#img.style.opacity = '1';
         document.getElementById('on-off').style.backgroundColor = 'green'
         let label = document.getElementById('on-off-span')
         label.innerText = 'on'
         label.style.color = 'green'
+        
+        let curlabel = document.getElementById('cur-volt-span')
+        curlabel.innerText = `${this.getCurVoltage()}V`
+
+        if(Math.abs(this.getCurVoltage() - this.getVoltage()) > 25) {
+            curlabel.style.color = 'red';
+        } else if (Math.abs(this.getCurVoltage() - this.getVoltage()) > 0) {
+            curlabel.style.color = 'yellow';
+        } else {
+            curlabel.style.color = 'green';
+        }
+
+        document.getElementById('chance-span').innerText = `${(250 * (TIMEDELTA / (this.getMTBF()*60*60)) * this.getEnergyClassCoefficient() * this.curBreakageMod()).toFixed(2)}`
     }
 
-    async off() {
+    async off(is_breaking = false) {
         super.off()
         
         this.#img.style.opacity = '0';
         
         await delay(2500);
 
-        this.#img.setAttribute('src', 'assets/blender_off.jpg');
-        this.#img.style.height = '67vh';
-
+        if(this.#blend_interval == -1 && !is_breaking) {
+            this.#img.setAttribute('src', 'assets/blender_off.jpg');
+            this.#img.style.height = '67vh';
+        }
         this.#img.style.opacity = '1';
         
         document.getElementById('on-off').style.backgroundColor = 'red'
@@ -143,6 +177,166 @@ class Blender extends AGDDev {
         let label = document.getElementById('on-off-span')
         label.innerText = 'off'
         label.style.color = 'red'
+    }
+
+    blendInterval() {
+        if(!this.isOn()) return;
+        if(!this.isUsable()) return;
+
+        this.incrementPowerUsed(TIMEDELTA * (this.getPower() / 3600000) * 4 / 5) //1/5 zużycia prądu na idle, pozostałe 4/5 dodaje się podczas blendowania
+        
+        document.getElementById('power-use-span').innerText = `${this.powerUsed().toFixed(4)}kW`
+
+        this.#blendProgress += TIMEDELTA * (this.getPower()/1200) * this.getEnergyClassCoefficient() / 20;
+
+        if (this.#blendProgress >= this.#blendTarget * (90/100)) {
+            if (this.#blendProgress > this.#blendTarget) {
+                this.#blendProgress = this.#blendTarget;
+            }
+            
+            if(this.#curImage < 3) {
+                this.#img.setAttribute('src', 'assets/blend-finished.gif');
+                this.#curImage = 3;
+            }
+    
+        } else if (this.#blendProgress >= this.#blendTarget * (55/100)) {
+            if(this.#curImage < 2) {
+                this.#img.setAttribute('src', 'assets/blend2.gif');
+                this.#curImage = 2;
+            }
+        } else if (this.#blendProgress >= this.#blendTarget) {
+            if(this.#curImage < 1) {
+                this.#img.setAttribute('src', 'assets/blend1.gif');
+                this.#curImage = 1;
+            }
+        }
+        
+        if(this.#blendProgress == this.#blendTarget) {
+            document.getElementById('progress-span').innerText = `SKOŃCZONE ${(this.#blendProgress / this.#blendTarget * 100).toFixed(2)}`
+            document.getElementById('progress-span').style.color = 'green';
+            
+        } else {
+            document.getElementById('progress-span').innerText = (this.#blendProgress / this.#blendTarget * 100).toFixed(2)
+        }
+
+        let break_chance = 250 * (TIMEDELTA / (this.getMTBF()*60*60)) * this.getEnergyClassCoefficient() * this.curBreakageMod()
+
+        if(rand(0, 100) <= break_chance) {
+            this.breakdown()
+        }
+
+    }
+
+    blend() {
+        if(this.isLidOpen()) {
+            throw new Error("Pokrywka jest otwarta, nie można blendować");
+        }
+
+        if(this.#blend_interval != -1) {
+            throw new Error("Blender już pracuje, nie zaczynam kolejnego") 
+        }
+        
+        if(this.getContents().length < 1) {
+            throw new Error("Nie ma składników w Blenderze")
+        }
+
+        document.getElementById('ingredients').innerHTML = '';
+
+        this.#curImage = -1;
+        this.#blendProgress = 0;
+
+        this.#blendTarget = (this.#foodstuffsList.length > 0 ? this.#foodstuffsList.reduce((prev, cur) => {
+            return prev + cur.getTotalWeight()
+        }, 0) : 0) + (this.#liquidsList.length > 0 ? this.#liquidsList.reduce((prev, cur) => {
+            return prev + cur.getTotalWeight() + cur.getVolume().getValue()
+        }, 0) : 0)
+
+        this.#blend_interval = setInterval(this.blendInterval.bind(this), 1000)
+    }
+
+    finish(is_breaking = false) {
+        if(this.#blend_interval != -1) {
+            clearInterval(this.#blend_interval);
+            
+            let curlabel = document.getElementById('progress-span')
+            curlabel.innerText = "N/A"
+            curlabel.style.color = 'black'
+
+            let output = document.getElementById('blend-history')
+            let div = document.createElement('div');
+
+            let dict = {}
+            let weight = 0;
+
+            let hasLiquid = false;
+            let hasFoodstuffs = false;
+
+            this.#foodstuffsList.forEach(el => {
+                if(dict[el.getName()] == undefined) {
+                    dict[el.getName()] = el.getCount();
+                } else {
+                    dict[el.getName()] += el.getCount();
+                }
+                weight += el.getTotalWeight();
+                hasFoodstuffs = true;
+            })
+
+            this.#liquidsList.forEach(el => {
+                if(dict[el.getName()] == undefined) {
+                    dict[el.getName()] = 1;
+                } else {
+                    dict[el.getName()] += 1;
+                }
+                weight += el.getTotalWeight();
+                hasLiquid = true;
+            })
+
+            let arr = Object.keys(dict);
+
+            let str = `[${arr[0]}]${dict[arr[0]] > 1 ? `*${dict[arr[0]]}` : ``}`
+            
+            arr.shift();
+            arr.forEach(key => {
+                str += `+[${key}]${dict[key] > 1 ? `*${dict[key]}` : ``}`
+            })
+
+            str += ` ${weight}g`
+
+            if((this.#blendProgress / this.#blendTarget * 100) < 100) {
+                str += ` <${(this.#blendProgress / this.#blendTarget * 100).toFixed(0)}%>`
+            }
+
+            if(hasFoodstuffs && hasLiquid) {
+                let res = new Mixed(str);
+                div.innerText = res.report();
+            } else if(hasFoodstuffs) {
+                let res = new Puree(str);
+                div.innerText = res.report()
+            } else if(hasLiquid) {
+                let res = new Drink(str);
+                div.innerText = res.report()
+            } else {
+                div.innerText = `Nil: ${str}`; // This will not execute because empty list can't blend
+            }
+
+            
+
+            this.#blend_interval = -1;
+            this.#blendTarget = -1;
+            this.#blendProgress = 0;
+            this.#curImage = -1;
+            this.#foodstuffsList = []
+            this.#liquidsList = []
+            document.getElementById('small-m').innerText = '0';
+            document.getElementById('small-v').innerText = '0';
+            document.getElementById('cur-load-span').innerText = `0/${this.getMaxLoadStr()}`;
+            document.getElementById('cur-volume-span').innerText = `0/${this.getMaxVolumeStr()}`;
+            if(!is_breaking) this.#img.setAttribute('src', 'assets/blender_static.jpg')
+            
+            output.appendChild(div)
+        } else {
+            throw new Error("Blender aktualnie nie pracuje")
+        }
     }
 
     getMaxLoad() {
@@ -154,6 +348,10 @@ class Blender extends AGDDev {
     }
 
     insertObject(newEdible) {
+        if(this.#blend_interval != -1) {
+            throw new Error("Blender aktualnie pracuje, nie można wkładać nowych składników") 
+        }
+
         if(!this.#isLidOpen) {
             throw new Error("Pokrywka musi być otwarta przed wkładaniem składników.")
         }
@@ -179,6 +377,10 @@ class Blender extends AGDDev {
     }
 
     insertLiquid(newLiquid) {
+        if(this.#blend_interval != -1) {
+            throw new Error("Blender aktualnie pracuje, nie można wlewać nowych składników") 
+        }
+
         if(!this.#isLidOpen) {
             throw new Error("Pokrywka musi być otwarta przed wlewaniem składników.")
         }
@@ -218,6 +420,10 @@ class Blender extends AGDDev {
     }
 
     removeObject(name, type = '', count = '') {
+        if(this.#blend_interval != -1) {
+            throw new Error("Blender aktualnie pracuje, nie można wyjmować składników") 
+        }
+
         if(!this.#isLidOpen) {
             throw new Error("Pokrywka musi być otwarta przed wyjmowaniem/wylewaniem składników.")
         }
@@ -226,9 +432,6 @@ class Blender extends AGDDev {
         let foundObject = false;
         let skipped_removed = false;
         for(let el of this.#foodstuffsList) {
-            console.log(name, el.getName())
-            console.log(type, el.getType())
-            console.log(count, el.getWeightPerOne())
             if(!foundObject && el.getName() == name && (type !== '' ? type == el.getType() : true) && (count !== '' ? count == el.getWeightPerOne().getOriginal() : true)) {
                 let new_list = []
                 for(let elem of this.#foodstuffsList) {
@@ -279,8 +482,8 @@ class Blender extends AGDDev {
             document.getElementById('small-m').innerText = `${current_load/1000}`
             
             let current_volume = total_volume;
-            document.getElementById('cur-volume-span').innerText = `${current_volume/1000}/${this.getMaxVolumeStr()}`
-            document.getElementById('small-v').innerText = `${current_volume/1000}`
+            document.getElementById('cur-volume-span').innerText = `${current_volume}/${this.getMaxVolumeStr()}`
+            document.getElementById('small-v').innerText = `${current_volume}`
         } else {
             throw new Error("Nie znaleziono obiektu do usunięcia");
         }
@@ -288,6 +491,29 @@ class Blender extends AGDDev {
 
     getContents() {
         return this.#foodstuffsList.concat(this.#liquidsList)
+    }
+
+    #fixing = false;
+    async fix() {
+        if(this.#fixing) return;
+        
+        this.#fixing = true;
+
+        this.#img.setAttribute('src', 'assets/kurier.png')
+        
+        await delay(5000);
+
+        this.#img.setAttribute('src', 'assets/wrocil.jpg')
+
+        await delay(5000);
+
+        this.#img.setAttribute('src', 'assets/blender_off.jpg')
+
+        Array.from(document.getElementsByClassName('broken-btn')).forEach(el => {
+            el.classList.remove('broken-btn');
+        })
+
+        super.fix();
     }
 }
 
@@ -438,30 +664,52 @@ class Kelvin extends Temperature {
         return `${this.#orig_value}K`
     }
 }
-class Mixed {
-    // name - nasze puree lub drink może się jakoś nazywać; defaultowo - "item1+item2+item3..." ale można też w konstruktorze podać
-    //lista rzeczy
+
+class Result {
+    #text;
+    constructor(str) {
+        this.#text = str;
+    }
+    
+    report() {
+        return `${this.getName()}: ${this.getText()}`
+    }
+
+    getText() {
+        return this.#text;
+    }
+
+    getName() {
+        return ''
+    }
 }
 
-class Drink extends Mixed {
-    //lista cieczy
+class Mixed extends Result {
+    constructor(str) {
+        super(str)
+    }
+    
+    getName() {
+        return 'Smoothie'
+    }
 }
 
-/*outline:
-metody:
-    DONE - otwórz pokrywke()
-    DONE - insert item(EdibleObject) jeżeli pokrywka otwarta else throw Exception
-    - blend() miksuje rzeczy, wciąż działa jeśli nie ma nic w środku, jak user chce miksować nic to niech ma
-        zwraca obiekt mixu złożony z report EdibleObjectów wszystkich w blenderze
-        zwraca obiekt drinku, jeżeli mix zawierał ciecz
-        wykorzystaj typeof aby wykorzystać do wypisywania czy coś jest owocem, warzywem lub cieczą
-        processuj obrazki, dodaj obrazek
-property:
-    DONE - allow hot liquids => jeżeli jest FALSE a insertuje się liquid o temperaturze wyższej niż 49 stopni celsjusza to Exception
-        nie wszystkie blendery dobrze pracują z ciepłą cieczą
-    DONE ale jeszcze nie czyści bo jeszcze nie blenduje - contents - wszystko co wrzucone do blendera w tablicy, czyszczona po return blend()
-    NOT_IMPLEMENTING (nie wyświetlam graficznie więc nie robię tego) - liquid_contents - ponieważ stackowanie cieczy jest teoretycznie osobne względem stackowania obiektów (leci na sam dół blendera obok warzyw/owoców)
-    - registered_mixes - lista mixów/drinków zawierająca dla każdego name i wymagane składniki, jeśli jest match dla tego co akurat się blenduje() to podaje name drinku do Mixed aby się nazywał
-        np "Tequila Sunset" => [tequila, sok pomarańczowy, syrop grenadine]
-        jeśli jest więcej niż jeden match to wybiera ten gdzie jest więcej elementów
-*/
+class Drink extends Result {
+    constructor(str) {
+        super(str)
+    }
+    
+    getName() {
+        return 'Drink'
+    }
+}
+
+class Puree extends Result {
+    constructor(str) {
+        super(str)
+    }
+    
+    getName() {
+        return 'Purée'
+    }
+}

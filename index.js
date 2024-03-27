@@ -44,13 +44,13 @@ async function showBlender() {
     // Do not enter proper Blender UI if blender build failed
     try {
         let voltage = parseFloat(form.voltage.value)
-        if (voltage == NaN) {
+        if (isNaN(voltage)) {
             form.voltage.focus()
             return;
         }
         
         let wattage = parseFloat(form.power.value)
-        if (wattage == NaN) {
+        if (isNaN(wattage)) {
             form.power.focus()
             return;
         }
@@ -142,22 +142,22 @@ function startNewEntry() {
         let ingr = new Fruit(name, count, weight);
         blender.insertObject(ingr);
 
-        div.innerText = `(${name})${type != "Foodstuff" ? ` [${ingr.getType()}] `: ' ' }<${count} sztuk> ${weight}`;
+        div.innerText = `(${name}) [${ingr.getType()}] <${count} sztuk> ${weight}`;
     } else if (type == "Vegetable") {
         if(count == "") throw new Error("Nie podano ilości składnika.")
         let ingr = new Vegetable(name, count, weight);
         blender.insertObject(ingr);
 
-        div.innerText = `(${name})${type != "Foodstuff" ? ` [${ingr.getType()}] `: ' ' }<${count} sztuk> ${weight}`;
+        div.innerText = `(${name}) [${ingr.getType()}] <${count} sztuk> ${weight}`;
     } else if (type == "Foodstuff") {
         if(count == "") throw new Error("Nie podano ilości składnika.")
         let ingr = new EdibleObject(name, count, weight);
         blender.insertObject(ingr);
 
-        div.innerText = `(${name})${type != "Foodstuff" ? ` [${ingr.getType()}] `: ' ' }<${count} sztuk> ${weight}`;
+        div.innerText = `(${name}) ${ingr.getType() != "" ? `[${ingr.getType()}] ` : ''}<${count} sztuk> ${weight}`;
     } else if (type == "Liquid") {
         let temp_val = document.getElementById('new-temp').value.trim();
-        if(temp_val == "" || parseFloat(temp_val) == NaN) throw new Error("Podano nieprawidłową temperaturę cieczy.")
+        if(temp_val == "" ||isNaN(parseFloat(temp_val))) throw new Error("Podano nieprawidłową temperaturę cieczy.")
     
         let temp_type = document.getElementById('new-temp-type').value;
         let temp = new Temperature(0);
@@ -173,13 +173,12 @@ function startNewEntry() {
         let ingr = new Liquid(name, count, weight, temp, 'Ciecz');
         blender.insertLiquid(ingr);
 
-        div.innerText = `(${name})${type != "Foodstuff" ? ` [${ingr.getType()}] `: ' ' }<${weight} na litr> ${count}`;
+        div.innerText = `(${name}) [${ingr.getType()}] <${weight} na litr> ${count}`;
     }
     
     div.classList.add('ingredient-entry');
     div.addEventListener('click', () => {
         let name = div.innerText.match(/\((.*?)\)/);
-        console.log(div.innerText)
         if(name) name = name[0].replace('(', '').replace(')', '');
         
         let type = div.innerText.match(/\[(.*?)\]/);
@@ -205,10 +204,18 @@ function togglePower() {
     if(blender.isOn()) {
         blender.off();
     } else {
-        blender.on();
+        blender.on(document.getElementById('cur-v-input').value);
     }
 }
 
 function startBlend() {
     blender.blend()
+}
+
+function finishBlend() {
+    blender.finish()
+}
+
+function fixBlender() {
+    blender.fix()
 }
